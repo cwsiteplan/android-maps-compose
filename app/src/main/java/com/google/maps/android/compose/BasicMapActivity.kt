@@ -16,6 +16,8 @@ package com.google.maps.android.compose
 
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -24,6 +26,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +37,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
@@ -49,19 +54,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
-import coil.compose.AsyncImagePainter.State.Empty.painter
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import coil.size.Size
+import androidx.compose.ui.viewinterop.AndroidView
+import coil3.load
+import coil3.request.allowHardware
+import coil3.request.crossfade
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -182,30 +187,26 @@ fun GoogleMapView(
             )
 
 
-            var showImage by remember {
-                mutableStateOf(false)
-            }
-
-            val painter = rememberAsyncImagePainter(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data("https://www.aquasafemine.com/wp-content/uploads/2018/06/dummy-man-570x570.png")
-                    .size(Size.ORIGINAL) // Set the target size to load the image at.
-                    .build()
-            )
-
-            if (painter.state is AsyncImagePainter.State.Success) {
-                Log.d("GoogleMap", "image loaded")
-                showImage = true
-            }
-
-
             MarkerComposable(
-                keys = arrayOf(showImage),
                 state = singapore4State,
             ) {
-                Image(
-                    painter = painter,
-                    contentDescription = "asdf"
+                val pxValue = with(LocalDensity.current) { 56.dp.toPx() }.toInt()
+
+                AndroidView(
+                    factory = { context ->
+                        ImageView(context).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            layoutParams = ViewGroup.LayoutParams(pxValue, pxValue)
+                            load("https://www.aquasafemine.com/wp-content/uploads/2018/06/dummy-man-570x570.png") {
+                                allowHardware(false)
+                                crossfade(false)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .padding(3.dp)
+                        .clip(CircleShape).border(3.dp, Color.Black, CircleShape),
                 )
 
             }
