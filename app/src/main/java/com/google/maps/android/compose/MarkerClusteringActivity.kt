@@ -2,6 +2,7 @@ package com.google.maps.android.compose
 
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowInsets.Side
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -25,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,6 +45,7 @@ import com.google.maps.android.clustering.algo.NonHierarchicalViewBasedAlgorithm
 import com.google.maps.android.compose.clustering.Clustering
 import com.google.maps.android.compose.clustering.rememberClusterManager
 import com.google.maps.android.compose.clustering.rememberClusterRenderer
+import java.util.UUID
 import kotlin.random.Random
 
 private val TAG = MarkerClusteringActivity::class.simpleName
@@ -73,6 +76,8 @@ fun GoogleMapClustering() {
 
 @Composable
 fun GoogleMapClustering(items: List<MyItem>) {
+    var selectedId by remember { mutableStateOf("") }
+
     var clusteringType by remember {
         mutableStateOf(ClusteringType.Default)
     }
@@ -98,6 +103,7 @@ fun GoogleMapClustering(items: List<MyItem>) {
             ClusteringType.CustomRenderer -> {
                 CustomRendererClustering(
                     items = items,
+                    selectedId
                 )
             }
         }
@@ -115,6 +121,10 @@ fun GoogleMapClustering(items: List<MyItem>) {
         onClusteringTypeClick = {
             clusteringType = it
         },
+        selectMarker = {
+            val index = Random.nextInt(items.size-1)
+            selectedId = items[index].id
+        }
     )
 }
 
@@ -172,7 +182,7 @@ private fun CustomUiClustering(items: List<MyItem>) {
 
 @OptIn(MapsComposeExperimentalApi::class)
 @Composable
-fun CustomRendererClustering(items: List<MyItem>) {
+fun CustomRendererClustering(items: List<MyItem>, selectedId: String) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
@@ -198,7 +208,7 @@ fun CustomRendererClustering(items: List<MyItem>) {
             CircleContent(
                 modifier = Modifier.size(20.dp),
                 text = "",
-                color = Color.Green,
+                color = if (it.id == selectedId) Color.Red else Color.Green,
             )
         },
         clusterManager = clusterManager,
@@ -258,6 +268,7 @@ private fun CircleContent(
 @Composable
 private fun ClusteringTypeControls(
     onClusteringTypeClick: (ClusteringType) -> Unit,
+    selectMarker: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -276,6 +287,7 @@ private fun ClusteringTypeControls(
                 onClick = { onClusteringTypeClick(it) }
             )
         }
+        MapButton(text = "select random marker", onClick = selectMarker)
     }
 }
 
@@ -304,6 +316,7 @@ data class MyItem(
     val itemTitle: String,
     val itemSnippet: String,
     val itemZIndex: Float,
+    val id: String = UUID.randomUUID().toString(),
 ) : ClusterItem {
     override fun getPosition(): LatLng =
         itemPosition
