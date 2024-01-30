@@ -23,7 +23,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,17 +55,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil3.load
-import coil3.request.allowHardware
-import coil3.request.crossfade
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -186,30 +179,6 @@ fun GoogleMapView(
                 onClick = markerClick
             )
 
-
-            MarkerComposable(
-                state = singapore4State,
-            ) {
-                val pxValue = with(LocalDensity.current) { 56.dp.toPx() }.toInt()
-
-                AndroidView(
-                    factory = { context ->
-                        ImageView(context).apply {
-                            scaleType = ImageView.ScaleType.CENTER_CROP
-                            layoutParams = ViewGroup.LayoutParams(pxValue, pxValue)
-                            load("https://www.aquasafemine.com/wp-content/uploads/2018/06/dummy-man-570x570.png") {
-                                allowHardware(false)
-                                crossfade(false)
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .size(56.dp)
-                        .padding(3.dp)
-                        .clip(CircleShape).border(3.dp, Color.Black, CircleShape),
-                )
-
-            }
             Circle(
                 center = circleCenter,
                 fillColor = MaterialTheme.colors.secondary,

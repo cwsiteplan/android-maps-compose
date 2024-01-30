@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,10 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.clustering.ClusterItem
@@ -44,6 +47,19 @@ import com.google.maps.android.compose.clustering.rememberClusterRenderer
 import kotlin.random.Random
 
 private val TAG = MarkerClusteringActivity::class.simpleName
+
+val imageUrls = listOf(
+    "https://images.pexels.com/photos/2280547/pexels-photo-2280547.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/34299/herbs-flavoring-seasoning-cooking.jpg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/159045/the-interior-of-the-repair-interior-design-159045.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/3965543/pexels-photo-3965543.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/3997379/pexels-photo-3997379.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/6568664/pexels-photo-6568664.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/7147857/pexels-photo-7147857.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/6583367/pexels-photo-6583367.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/3786215/pexels-photo-3786215.jpeg",
+    "https://images.pexels.com/photos/7147469/pexels-photo-7147469.jpeg?auto=compress&cs=tinysrgb&w=800"
+)
 
 class MarkerClusteringActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -181,11 +197,7 @@ fun CustomRendererClustering(items: List<MyItem>) {
             )
         },
         clusterItemContent = {
-            CircleContent(
-                modifier = Modifier.size(20.dp),
-                text = "",
-                color = Color.Green,
-            )
+            AsyncImage(model = imageUrls[Random.nextInt(imageUrls.size-1)], contentScale = ContentScale.Crop, contentDescription = "", modifier = Modifier.size(50.dp).border(2.dp, Color.Blue))
         },
         clusterManager = clusterManager,
     )
