@@ -31,6 +31,22 @@ android {
         compose true
     }
 
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore')
+            keyAlias 'key0'
+            keyPassword 'test1234'
+            storePassword 'test1234'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            signingConfig signingConfigs.release
+        }
+    }
+
     kotlinOptions {
         jvmTarget = '1.8'
         freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'

@@ -43,9 +43,23 @@ import com.google.maps.android.clustering.algo.NonHierarchicalViewBasedAlgorithm
 import com.google.maps.android.compose.clustering.Clustering
 import com.google.maps.android.compose.clustering.rememberClusterManager
 import com.google.maps.android.compose.clustering.rememberClusterRenderer
+import java.util.UUID
 import kotlin.random.Random
 
 private val TAG = MarkerClusteringActivity::class.simpleName
+
+private val layerColors = listOf(
+    Color.Red,
+    Color.Blue,
+    Color.Green,
+    Color.Yellow,
+    Color.Cyan,
+    Color.Magenta,
+    Color.Black,
+    Color.Gray,
+    Color(0xffff99ff),
+    Color.White
+)
 
 class MarkerClusteringActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,12 +74,24 @@ class MarkerClusteringActivity : ComponentActivity() {
 fun GoogleMapClustering() {
     val items = remember { mutableStateListOf<MyItem>() }
     LaunchedEffect(Unit) {
-        for (i in 1..10) {
-            val position = LatLng(
-                singapore2.latitude + Random.nextFloat(),
-                singapore2.longitude + Random.nextFloat(),
-            )
-            items.add(MyItem(position, "Marker", "Snippet", 0f))
+        repeat(10) {layerNumber ->
+            val layerId = UUID.randomUUID()
+            repeat(400) {
+                val position = LatLng(
+                    singapore2.latitude + Random.nextFloat(),
+                    singapore2.longitude + Random.nextFloat(),
+                )
+                items.add(
+                    MyItem(
+                        position,
+                        "Marker",
+                        "Snippet",
+                        0f,
+                        layerId = layerId.toString(),
+                        layerColors[layerNumber]
+                    )
+                )
+            }
         }
     }
     GoogleMapClustering(items = items)
@@ -74,7 +100,7 @@ fun GoogleMapClustering() {
 @Composable
 fun GoogleMapClustering(items: List<MyItem>) {
     var clusteringType by remember {
-        mutableStateOf(ClusteringType.Default)
+        mutableStateOf(ClusteringType.CustomRenderer)
     }
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
@@ -176,58 +202,61 @@ fun CustomRendererClustering(items: List<MyItem>) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
-    val clusterManager = rememberClusterManager<MyItem>()
 
-    // Here the clusterManager is being customized with a NonHierarchicalViewBasedAlgorithm.
-    // This speeds up by a factor the rendering of items on the screen.
-    clusterManager?.setAlgorithm(
-        NonHierarchicalViewBasedAlgorithm(
-            screenWidth.value.toInt(),
-            screenHeight.value.toInt()
+    items.groupBy { it.layerId }.map {
+        val clusterManager = rememberClusterManager<MyItem>()
+
+        // Here the clusterManager is being customized with a NonHierarchicalViewBasedAlgorithm.
+        // This speeds up by a factor the rendering of items on the screen.
+        clusterManager?.setAlgorithm(
+            NonHierarchicalViewBasedAlgorithm(
+                screenWidth.value.toInt(),
+                screenHeight.value.toInt()
+            )
         )
-    )
-    val renderer = rememberClusterRenderer(
-        clusterContent = { cluster ->
-            CircleContent(
-                modifier = Modifier.size(40.dp),
-                text = "%,d".format(cluster.size),
-                color = Color.Green,
-            )
-        },
-        clusterItemContent = {
-            CircleContent(
-                modifier = Modifier.size(20.dp),
-                text = "",
-                color = Color.Green,
-            )
-        },
-        clusterManager = clusterManager,
-    )
-    SideEffect {
-        clusterManager ?: return@SideEffect
-        clusterManager.setOnClusterClickListener {
-            Log.d(TAG, "Cluster clicked! $it")
-            false
-        }
-        clusterManager.setOnClusterItemClickListener {
-            Log.d(TAG, "Cluster item clicked! $it")
-            false
-        }
-        clusterManager.setOnClusterItemInfoWindowClickListener {
-            Log.d(TAG, "Cluster item info window clicked! $it")
-        }
-    }
-    SideEffect {
-        if (clusterManager?.renderer != renderer) {
-            clusterManager?.renderer = renderer ?: return@SideEffect
-        }
-    }
-
-    if (clusterManager != null) {
-        Clustering(
-            items = items,
+        val renderer = rememberClusterRenderer(
+            clusterContent = { cluster ->
+                CircleContent(
+                    modifier = Modifier.size(40.dp),
+                    text = "%,d".format(cluster.size),
+                    color = it.value.first().layerColor,
+                )
+            },
+            clusterItemContent = {
+                CircleContent(
+                    modifier = Modifier.size(20.dp),
+                    text = "",
+                    color = it.layerColor,
+                )
+            },
             clusterManager = clusterManager,
         )
+        SideEffect {
+            clusterManager ?: return@SideEffect
+            clusterManager.setOnClusterClickListener {
+                Log.d(TAG, "Cluster clicked! $it")
+                false
+            }
+            clusterManager.setOnClusterItemClickListener {
+                Log.d(TAG, "Cluster item clicked! $it")
+                false
+            }
+            clusterManager.setOnClusterItemInfoWindowClickListener {
+                Log.d(TAG, "Cluster item info window clicked! $it")
+            }
+        }
+        SideEffect {
+            if (clusterManager?.renderer != renderer) {
+                clusterManager?.renderer = renderer ?: return@SideEffect
+            }
+        }
+
+        if (clusterManager != null) {
+            Clustering(
+                items = it.value,
+                clusterManager = clusterManager,
+            )
+        }
     }
 }
 
@@ -304,6 +333,8 @@ data class MyItem(
     val itemTitle: String,
     val itemSnippet: String,
     val itemZIndex: Float,
+    val layerId: String,
+    val layerColor: Color
 ) : ClusterItem {
     override fun getPosition(): LatLng =
         itemPosition
