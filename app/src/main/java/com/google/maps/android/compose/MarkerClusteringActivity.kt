@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -31,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +66,12 @@ private val layerColors = listOf(
     Color.White
 )
 
+enum class MarkerType {
+    Circle,
+    Rectangle,
+    Pin
+}
+
 class MarkerClusteringActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +85,7 @@ class MarkerClusteringActivity : ComponentActivity() {
 fun GoogleMapClustering() {
     val items = remember { mutableStateListOf<MyItem>() }
     LaunchedEffect(Unit) {
-        repeat(10) {layerNumber ->
+        repeat(10) { layerNumber ->
             val layerId = UUID.randomUUID()
             repeat(400) {
                 val position = LatLng(
@@ -88,7 +99,8 @@ fun GoogleMapClustering() {
                         "Snippet",
                         0f,
                         layerId = layerId.toString(),
-                        layerColors[layerNumber]
+                        layerColors[layerNumber],
+                        MarkerType.entries.random()
                     )
                 )
             }
@@ -203,59 +215,93 @@ fun CustomRendererClustering(items: List<MyItem>) {
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
 
-    items.groupBy { it.layerId }.map {
-        val clusterManager = rememberClusterManager<MyItem>()
+    items.groupBy { it.layerId }.map { layeredItems ->
+        layeredItems.value.groupBy { it.type }.map { typedItems ->
 
-        // Here the clusterManager is being customized with a NonHierarchicalViewBasedAlgorithm.
-        // This speeds up by a factor the rendering of items on the screen.
-        clusterManager?.setAlgorithm(
-            NonHierarchicalViewBasedAlgorithm(
-                screenWidth.value.toInt(),
-                screenHeight.value.toInt()
+
+            val clusterManager = rememberClusterManager<MyItem>()
+
+            // Here the clusterManager is being customized with a NonHierarchicalViewBasedAlgorithm.
+            // This speeds up by a factor the rendering of items on the screen.
+            clusterManager?.setAlgorithm(
+                NonHierarchicalViewBasedAlgorithm(
+                    screenWidth.value.toInt(),
+                    screenHeight.value.toInt()
+                )
             )
-        )
-        val renderer = rememberClusterRenderer(
-            clusterContent = { cluster ->
-                CircleContent(
-                    modifier = Modifier.size(40.dp),
-                    text = "%,d".format(cluster.size),
-                    color = it.value.first().layerColor,
-                )
-            },
-            clusterItemContent = {
-                CircleContent(
-                    modifier = Modifier.size(20.dp),
-                    text = "",
-                    color = it.layerColor,
-                )
-            },
-            clusterManager = clusterManager,
-        )
-        SideEffect {
-            clusterManager ?: return@SideEffect
-            clusterManager.setOnClusterClickListener {
-                Log.d(TAG, "Cluster clicked! $it")
-                false
-            }
-            clusterManager.setOnClusterItemClickListener {
-                Log.d(TAG, "Cluster item clicked! $it")
-                false
-            }
-            clusterManager.setOnClusterItemInfoWindowClickListener {
-                Log.d(TAG, "Cluster item info window clicked! $it")
-            }
-        }
-        SideEffect {
-            if (clusterManager?.renderer != renderer) {
-                clusterManager?.renderer = renderer ?: return@SideEffect
-            }
-        }
+            val renderer = rememberClusterRenderer(
+                clusterContent = { cluster ->
+                    when (cluster.items.first().type) {
+                        MarkerType.Circle -> CircleContent(
+                            modifier = Modifier.size(40.dp),
+                            text = "%,d".format(cluster.size),
+                            color = typedItems.value.first().layerColor,
+                        )
 
-        if (clusterManager != null) {
-            Clustering(
-                items = it.value,
+                        MarkerType.Rectangle -> RectangleContent(
+                            modifier = Modifier
+                                .size(40.dp),
+                            text = "%,d".format(cluster.size),
+                            color = typedItems.value.first().layerColor,
+                        )
+
+                        MarkerType.Pin -> PinContent(
+                            text = "%,d".format(cluster.size),
+                            color = typedItems.value.first().layerColor,
+                        )
+                    }
+                },
+                clusterItemContent = {
+                    when (it.type) {
+                        MarkerType.Circle -> CircleContent(
+                            modifier = Modifier.size(40.dp),
+                            text = "",
+                            color = it.layerColor,
+                        )
+
+                        MarkerType.Rectangle -> RectangleContent(
+                            modifier = Modifier
+                                .size(40.dp),
+                            text = "",
+                            color = it.layerColor
+                        )
+
+                        MarkerType.Pin -> PinContent(
+                            modifier = Modifier
+                                .size(40.dp),
+                            text = "",
+                            color = it.layerColor
+                        )
+                    }
+                },
                 clusterManager = clusterManager,
             )
+            SideEffect {
+                clusterManager ?: return@SideEffect
+                clusterManager.setOnClusterClickListener {
+                    Log.d(TAG, "Cluster clicked! $it")
+                    false
+                }
+                clusterManager.setOnClusterItemClickListener {
+                    Log.d(TAG, "Cluster item clicked! $it")
+                    false
+                }
+                clusterManager.setOnClusterItemInfoWindowClickListener {
+                    Log.d(TAG, "Cluster item info window clicked! $it")
+                }
+            }
+            SideEffect {
+                if (clusterManager?.renderer != renderer) {
+                    clusterManager?.renderer = renderer ?: return@SideEffect
+                }
+            }
+
+            if (clusterManager != null) {
+                Clustering(
+                    items = typedItems.value,
+                    clusterManager = clusterManager,
+                )
+            }
         }
     }
 }
@@ -281,6 +327,51 @@ private fun CircleContent(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+private fun RectangleContent(
+    color: Color,
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier,
+        shape = RectangleShape,
+        color = color,
+        contentColor = Color.White,
+        border = BorderStroke(1.dp, Color.White)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun PinContent(
+    color: Color,
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(contentAlignment = Alignment.Center) {
+        Text(
+            text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+        Icon(
+            tint = color,
+            painter = rememberVectorPainter(image = Icons.Default.Place),
+            contentDescription = null
+        )
     }
 }
 
@@ -334,7 +425,8 @@ data class MyItem(
     val itemSnippet: String,
     val itemZIndex: Float,
     val layerId: String,
-    val layerColor: Color
+    val layerColor: Color,
+    val type: MarkerType,
 ) : ClusterItem {
     override fun getPosition(): LatLng =
         itemPosition
