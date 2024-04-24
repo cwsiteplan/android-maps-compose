@@ -42,6 +42,9 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,20 +56,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.StrokeStyle
-import com.google.android.gms.maps.model.StyleSpan
 import com.google.maps.android.compose.theme.MapsComposeSampleTheme
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 private const val TAG = "BasicMapActivity"
 
@@ -74,20 +78,20 @@ val singapore = LatLng(1.3588227, 103.8742114)
 val singapore2 = LatLng(1.40, 103.77)
 val singapore3 = LatLng(1.45, 103.77)
 val singapore4 = LatLng(1.50, 103.77)
-val singapore5 = LatLng(1.3418, 103.8461)
-val singapore6 = LatLng(1.3430, 103.8844)
-val singapore7 = LatLng(1.3430, 103.9116)
-val singapore8 = LatLng(1.3300, 103.8624)
-val singapore9 = LatLng(1.3200, 103.8541)
-val singapore10 = LatLng(1.3200, 103.8765)
-
+val singapore5 = LatLng(1.55, 103.77)
 val defaultCameraPosition = CameraPosition.fromLatLngZoom(singapore, 11f)
 
-val styleSpan = StyleSpan(
-    StrokeStyle.gradientBuilder(
-        Color.Red.toArgb(),
-        Color.Green.toArgb(),
-    ).build(),
+val imageUrls = listOf(
+    "https://images.pexels.com/photos/2280547/pexels-photo-2280547.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/34299/herbs-flavoring-seasoning-cooking.jpg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/159045/the-interior-of-the-repair-interior-design-159045.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/3965543/pexels-photo-3965543.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/3997379/pexels-photo-3997379.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/6568664/pexels-photo-6568664.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/7147857/pexels-photo-7147857.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=2",
+    "https://images.pexels.com/photos/6583367/pexels-photo-6583367.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/3786215/pexels-photo-3786215.jpeg",
+    "https://images.pexels.com/photos/7147469/pexels-photo-7147469.jpeg?auto=compress&cs=tinysrgb&w=800"
 )
 
 class BasicMapActivity : ComponentActivity() {
@@ -138,18 +142,12 @@ fun GoogleMapView(
     val singaporeState = rememberMarkerState(position = singapore)
     val singapore2State = rememberMarkerState(position = singapore2)
     val singapore3State = rememberMarkerState(position = singapore3)
+    val imageState = rememberMarkerState(position = singapore5)
     val singapore4State = rememberMarkerState(position = singapore4)
-
     var circleCenter by remember { mutableStateOf(singapore) }
     if (singaporeState.dragState == DragState.END) {
         circleCenter = singaporeState.position
     }
-
-    val polylinePoints = remember { listOf(singapore, singapore5) }
-    val polylineSpanPoints = remember { listOf(singapore, singapore6, singapore7) }
-    val styleSpanList = remember { listOf(styleSpan) }
-
-    val polygonPoints = remember { listOf(singapore8, singapore9, singapore10) }
 
     var uiSettings by remember { mutableStateOf(MapUiSettings(compassEnabled = false)) }
     var shouldAnimateZoom by remember { mutableStateOf(true) }
@@ -199,6 +197,18 @@ fun GoogleMapView(
                 title = "Marker in Singapore",
                 onClick = markerClick
             )
+
+            MarkerComposable(
+                state = imageState,
+            ) {
+                AsyncImage(
+                    model = imageUrls.get(Random.nextInt(imageUrls.size - 1)),
+                    contentDescription = null,
+                    placeholder = rememberVectorPainter(image = Icons.Rounded.Refresh),
+                    error = rememberVectorPainter(image = Icons.Rounded.Close)
+                )
+            }
+
             MarkerComposable(
                 title = "Marker Composable",
                 keys = arrayOf("singapore4"),
@@ -219,32 +229,15 @@ fun GoogleMapView(
                     )
                 }
             }
-
             Circle(
                 center = circleCenter,
                 fillColor = MaterialTheme.colors.secondary,
                 strokeColor = MaterialTheme.colors.secondaryVariant,
                 radius = 1000.0,
             )
-
-            Polyline(
-                points = polylinePoints,
-                tag = "Polyline A",
-            )
-
-            Polyline(
-                points = polylineSpanPoints,
-                spans = styleSpanList,
-                tag = "Polyline B",
-            )
-
-            Polygon(
-                points = polygonPoints,
-                fillColor = Color.Black.copy(alpha = 0.5f)
-            )
-
             content()
         }
+
     }
     Column {
         MapTypeControls(onMapTypeClick = {
