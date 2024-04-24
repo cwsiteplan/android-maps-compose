@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.clustering.ClusterItem
@@ -188,18 +190,10 @@ fun CustomRendererClustering(items: List<MyItem>) {
     )
     val renderer = rememberClusterRenderer(
         clusterContent = { cluster ->
-            CircleContent(
-                modifier = Modifier.size(40.dp),
-                text = "%,d".format(cluster.size),
-                color = Color.Green,
-            )
+            ImageContent(true, cluster.size)
         },
         clusterItemContent = {
-            CircleContent(
-                modifier = Modifier.size(20.dp),
-                text = "",
-                color = Color.Green,
-            )
+            ImageContent(false)
         },
         clusterManager = clusterManager,
     )
@@ -228,6 +222,25 @@ fun CustomRendererClustering(items: List<MyItem>) {
             items = items,
             clusterManager = clusterManager,
         )
+    }
+}
+
+@Composable
+private fun ImageContent(isCluster: Boolean, clusterCount: Int = 0) {
+    val bordered = if (isCluster)
+        Modifier.border(2.dp, Color.Blue)
+    else Modifier
+    Box {
+        AsyncImage(
+            model = imageUrls.random(),
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .then(bordered)
+        )
+        if (clusterCount > 0) {
+            Text(clusterCount.toString(), modifier = Modifier.align(Alignment.Center))
+        }
     }
 }
 
