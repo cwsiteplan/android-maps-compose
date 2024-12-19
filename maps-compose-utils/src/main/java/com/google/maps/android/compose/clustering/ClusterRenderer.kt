@@ -3,6 +3,7 @@ package com.google.maps.android.compose.clustering
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.core.view.doOnDetach
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.clustering.Cluster
 import com.google.maps.android.clustering.ClusterItem
@@ -36,7 +38,7 @@ import kotlinx.coroutines.launch
 internal class ComposeUiClusterRenderer<T : ClusterItem>(
     private val context: Context,
     private val scope: CoroutineScope,
-    map: GoogleMap,
+    private val map: GoogleMap,
     clusterManager: ClusterManager<T>,
     private val viewRendererState: State<ComposeUiViewRenderer>,
     private val clusterContentState: State<@Composable ((Cluster<T>) -> Unit)?>,
@@ -154,6 +156,11 @@ internal class ComposeUiClusterRenderer<T : ClusterItem>(
         } else {
             super.getDescriptorForCluster(cluster)
         }
+    }
+
+    override fun onClusterItemUpdated(item: T, marker: Marker) {
+        super.onClusterItemUpdated(item, marker)
+        marker.rotation = -45f - map.cameraPosition.bearing
     }
 
     override fun onBeforeClusterItemRendered(item: T, markerOptions: MarkerOptions) {

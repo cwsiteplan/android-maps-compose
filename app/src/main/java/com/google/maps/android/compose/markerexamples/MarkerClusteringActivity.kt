@@ -46,6 +46,7 @@ import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.MarkerInfoWindow
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.clustering.Clustering
 import com.google.maps.android.compose.clustering.rememberClusterManager
 import com.google.maps.android.compose.clustering.rememberClusterRenderer
@@ -80,7 +81,8 @@ fun GoogleMapClustering() {
         }
     }
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .systemBarsPadding()
     ) {
         GoogleMapClustering(items = items)
@@ -98,6 +100,21 @@ fun GoogleMapClustering(items: List<MyItem>) {
             position = CameraPosition.fromLatLngZoom(singapore, 6f)
         }
     ) {
+        items.map { item ->
+            Polyline(
+                listOf(
+                    LatLng(
+                        item.itemPosition.latitude - 0.08, item.itemPosition.longitude - 0.08
+                    ),
+                    LatLng(
+                        item.itemPosition.latitude+ 0.08 , item.itemPosition.longitude + 0.08
+                    )
+                ),
+                color = Color.Red,
+                width = 20f,
+            )
+        }
+
         when (clusteringType) {
             ClusteringType.Default -> {
                 DefaultClustering(
@@ -159,6 +176,8 @@ private fun DefaultClustering(items: List<MyItem>) {
 @OptIn(MapsComposeExperimentalApi::class)
 @Composable
 private fun CustomUiClustering(items: List<MyItem>) {
+
+
     Clustering(
         items = items,
         // Optional: Handle clicks on clusters, cluster items, and cluster item info windows
@@ -215,10 +234,9 @@ fun CustomRendererClustering(items: List<MyItem>) {
             )
         },
         clusterItemContent = {
-            CircleContent(
+            Label(
                 modifier = Modifier.size(20.dp),
-                text = "",
-                color = Color.Green,
+                lable = it.itemTitle + ":random",
             )
         },
         clusterManager = clusterManager,
@@ -250,6 +268,11 @@ fun CustomRendererClustering(items: List<MyItem>) {
             clusterManager = clusterManager,
         )
     }
+}
+
+@Composable
+fun Label(lable: String, modifier: Modifier = Modifier) {
+    Text(lable)
 }
 
 @Composable
